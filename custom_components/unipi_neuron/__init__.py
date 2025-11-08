@@ -5,6 +5,7 @@ import logging
 
 import voluptuous as vol
 from evok_ws_client import *
+from websockets.exceptions import ConnectionClosedError
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME, CONF_TYPE
@@ -64,29 +65,32 @@ async def async_setup(hass, config):
 
 
 async def evok_connection(hass, neuron, reconnect_seconds):
-    
     def evok_update_dispatch_send(name, device, circuit, value):
         _LOGGER.debug("SENDING Dispacher on %s %s", device, circuit)
         hass.helpers.dispatcher.async_dispatcher_send(
             f"{DOMAIN}_{name}_{device}_{circuit}"
         )
+
     # Keep connection and subscription to websocket server on Unipi
     # Reconnect if connection is lost
-    _connected = False
     while True:
-        await neuron.evok_close()
-        if not await neuron.evok_connect():
-            _connected = False
-            #Try to connect every X seconds
-            await asyncio.sleep(reconnect_seconds)
-            continue
+        try:
+            await neuron.evok_close()
 
-        _connected = True
-        await neuron.evok_register_default_filter_dev()
-        await neuron.evok_full_state_sync()
+            if not await neuron.evok_connect():
+                await asyncio.sleep(reconnect_seconds)
+                continue
 
-        while True:
-            if not await neuron.evok_receive(True, evok_update_dispatch_send):
-                _connected = False
-                break
+            await neuron.evok_register_default_filter_dev()
+            await neuron.evok_full_state_sync()
+
+            while True:
+                if not await neuron.evok_receive(True, evok_update_dispatch_send):
+                    break
+        except ConnectionClosedError as ex:
+            _LOGGER.warning(f"WebSocket connection lost: {ex.reason}. Reconnecting in {reconnect_seconds} seconds.")
+        except Exception as ex:
+            _LOGGER.error(f"An unexpected error occurred in the connection loop: {ex}. Reconnecting in {reconnect_seconds} seconds.")
+
+        await asyncio.sleep(reconnect_seconds)
     
