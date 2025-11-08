@@ -152,9 +152,12 @@ class UnipiLight(LightEntity, RestoreEntity):
             dict_to_send["pwm_duty"] = str(round(brightness / 255 * 100))
             self._brightness = brightness
             await self._unipi_hub.evok_send(self._device, self._port, dict_to_send)
+            self.async_write_ha_state()
         else:
             _LOGGER.info("Turn on light %s", self._name)
             await self._unipi_hub.evok_send(self._device, self._port, "1")
+            self._state = True
+            self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs):
         """Instruct the light to turn off."""
@@ -164,9 +167,12 @@ class UnipiLight(LightEntity, RestoreEntity):
             dict_to_send["pwm_duty"] = "0"
             await self._unipi_hub.evok_send(self._device, self._port, dict_to_send)
             self._brightness = 0
+            self.async_write_ha_state()
         else:
             _LOGGER.info("Turn off light %s", self._name)
             await self._unipi_hub.evok_send(self._device, self._port, "0")
+            self._state = False
+            self.async_write_ha_state()
 
     # def async_update(self):
     #     """Fetch new state data for this light.
