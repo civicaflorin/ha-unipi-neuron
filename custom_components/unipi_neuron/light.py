@@ -10,7 +10,6 @@ from homeassistant.components.light import (
     PLATFORM_SCHEMA,
     LightEntity,
 )
-from homeassistant.helpers.restore_state import RestoreEntity
 
 from homeassistant.const import (
     CONF_DEVICE,
@@ -67,7 +66,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     return
 
 
-class UnipiLight(LightEntity, RestoreEntity):
+class UnipiLight(LightEntity):
     """Representation of an Light attached to UniPi product relay or digital output."""
 
     def __init__(self, unipi_hub, name, port, device, mode):
@@ -84,13 +83,6 @@ class UnipiLight(LightEntity, RestoreEntity):
 
     async def async_added_to_hass(self):
         """Call when entity is added to hass."""
-        await super().async_added_to_hass()
-
-        state = await self.async_get_last_state()
-        if state:
-            self._state = state.state == "on"
-            self._brightness = state.attributes.get("brightness")
-
         signal = f"{DOMAIN}_{self._unipi_hub._name}_{self._device}_{self._port}"
         _LOGGER.debug("connecting %s", signal)
         async_dispatcher_connect(self.hass, signal, self._update_callback)
@@ -152,9 +144,12 @@ class UnipiLight(LightEntity, RestoreEntity):
             dict_to_send["pwm_duty"] = str(round(brightness / 255 * 100))
             self._brightness = brightness
             await self._unipi_hub.evok_send(self._device, self._port, dict_to_send)
+            self.async_write_ha_state()
         else:
             _LOGGER.info("Turn on light %s", self._name)
             await self._unipi_hub.evok_send(self._device, self._port, "1")
+            self._state = True
+            self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs):
         """Instruct the light to turn off."""
@@ -164,9 +159,12 @@ class UnipiLight(LightEntity, RestoreEntity):
             dict_to_send["pwm_duty"] = "0"
             await self._unipi_hub.evok_send(self._device, self._port, dict_to_send)
             self._brightness = 0
+            self.async_write_ha_state()
         else:
             _LOGGER.info("Turn off light %s", self._name)
             await self._unipi_hub.evok_send(self._device, self._port, "0")
+            self._state = False
+            self.async_write_ha_state()
 
     # def async_update(self):
     #     """Fetch new state data for this light.
