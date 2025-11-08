@@ -67,8 +67,8 @@ async def async_setup(hass, config):
 async def evok_connection(hass, neuron, reconnect_seconds):
     def evok_update_dispatch_send(name, device, circuit, value):
         _LOGGER.debug("SENDING Dispacher on %s %s", device, circuit)
-        async_dispatcher_send(
-            hass, f"{DOMAIN}_{name}_{device}_{circuit}"
+        hass.loop.call_soon_threadsafe(
+            async_dispatcher_send, hass, f"{DOMAIN}_{name}_{device}_{circuit}"
         )
 
     # Keep connection and subscription to websocket server on Unipi

@@ -28,7 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 DEVICE_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): cv.string,
-        vol.Required(CONF_DEVICE): vol.Any("input"),
+        vol.Required(CONF_DEVICE): vol.Any("input", "di"),
         vol.Required(CONF_PORT): cv.matches_regex(r"^(?:UART_([0-1][0-9]|[1-8])_)[1-5]_[0-1][0-9]|[1-8]"),
     }
 )
