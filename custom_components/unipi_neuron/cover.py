@@ -568,7 +568,7 @@ class UnipiCover(CoverEntity):
             self._stop_cover_timer = None
 
 
-    def _output_update_callback(self):
+    async def _output_update_callback(self):
         """Output signal state from neuron has changed"""
         motor_driver_up_state = self._unipi_hub.evok_state_get(self._device, self._port_up) == 1
         motor_driver_down_state = self._unipi_hub.evok_state_get(self._device, self._port_down) == 1

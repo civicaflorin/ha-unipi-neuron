@@ -104,7 +104,7 @@ class UnipiBinarySensor(BinarySensorEntity):
     #     _LOGGER.info("Update binary sensor %s", self._name)
     #     self._state = self._unipi_hub.evok_state_get(self._device, self._port) == 1
         
-    def _update_callback(self):
+    async def _update_callback(self):
         """State has changed"""
         self._state = self._unipi_hub.evok_state_get(self._device, self._port) == 1
         #self.async_schedule_update_ha_state(True)
