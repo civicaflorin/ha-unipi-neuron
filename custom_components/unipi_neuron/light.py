@@ -10,6 +10,7 @@ from homeassistant.components.light import (
     PLATFORM_SCHEMA,
     LightEntity,
 )
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from homeassistant.const import (
     CONF_DEVICE,
@@ -66,7 +67,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     return
 
 
-class UnipiLight(LightEntity):
+class UnipiLight(LightEntity, RestoreEntity):
     """Representation of an Light attached to UniPi product relay or digital output."""
 
     def __init__(self, unipi_hub, name, port, device, mode):
@@ -83,6 +84,13 @@ class UnipiLight(LightEntity):
 
     async def async_added_to_hass(self):
         """Call when entity is added to hass."""
+        await super().async_added_to_hass()
+
+        state = await self.async_get_last_state()
+        if state:
+            self._state = state.state == "on"
+            self._brightness = state.attributes.get("brightness")
+
         signal = f"{DOMAIN}_{self._unipi_hub._name}_{self._device}_{self._port}"
         _LOGGER.debug("connecting %s", signal)
         async_dispatcher_connect(self.hass, signal, self._update_callback)
