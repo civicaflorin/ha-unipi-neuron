@@ -6,7 +6,7 @@ import voluptuous as vol
 # Import the device class from the component that you want to support
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    SUPPORT_BRIGHTNESS,
+    ColorMode,
     PLATFORM_SCHEMA,
     LightEntity,
 )
@@ -81,6 +81,11 @@ class UnipiLight(LightEntity, RestoreEntity):
         self._brightness = None
         if mode == "pwm":
             self._dimmable = True
+            self._attr_color_mode = ColorMode.BRIGHTNESS
+            self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+        else:
+            self._attr_color_mode = ColorMode.ONOFF
+            self._attr_supported_color_modes = {ColorMode.ONOFF}
 
     async def async_added_to_hass(self):
         """Call when entity is added to hass."""
@@ -104,15 +109,6 @@ class UnipiLight(LightEntity, RestoreEntity):
     def unique_id(self):
         """Return the unique ID of this light entity."""
         return f"{self._device}_{self._port}_at_{self._unipi_hub._name}"
-
-    @property
-    def supported_features(self):
-        """Flag supported features."""
-        flag = 0
-        if self._dimmable:
-            flag |= SUPPORT_BRIGHTNESS
-        
-        return flag
 
     @property
     def brightness(self):

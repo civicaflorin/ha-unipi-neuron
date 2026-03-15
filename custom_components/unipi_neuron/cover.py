@@ -9,15 +9,8 @@ from homeassistant.components.cover import (
     DEVICE_CLASSES_SCHEMA,
     ENTITY_ID_FORMAT,
     PLATFORM_SCHEMA,
-    SUPPORT_CLOSE,
-    SUPPORT_CLOSE_TILT,
-    SUPPORT_OPEN,
-    SUPPORT_OPEN_TILT,
-    SUPPORT_SET_POSITION,
-    SUPPORT_SET_TILT_POSITION,
-    SUPPORT_STOP,
-    SUPPORT_STOP_TILT,
     CoverEntity,
+    CoverEntityFeature,
 )
 from homeassistant.const import (
     CONF_DEVICE,
@@ -67,10 +60,10 @@ CONF_TILT_CHANGE_TIME = "tilt_change_time"
 CONF_MIN_REVERSE_DIR_TIME = "min_reverse_dir_time"
 
 TILT_FEATURES = (
-    SUPPORT_OPEN_TILT
-    | SUPPORT_CLOSE_TILT
-    | SUPPORT_STOP_TILT
-    | SUPPORT_SET_TILT_POSITION
+    CoverEntityFeature.OPEN_TILT
+    | CoverEntityFeature.CLOSE_TILT
+    | CoverEntityFeature.STOP_TILT
+    | CoverEntityFeature.SET_TILT_POSITION
 )
 
 COVER_SCHEMA = vol.Schema(
@@ -234,7 +227,7 @@ class UnipiCover(CoverEntity):
     @property
     def unique_id(self):
         """Return the unique ID of this cover entity."""
-        return f"{self._device}_{self._port}_at_{self._unipi_hub._name}"
+        return f"{self._device}_{self._port_up}_at_{self._unipi_hub._name}"
 
     @property
     def is_closed(self):
@@ -285,7 +278,13 @@ class UnipiCover(CoverEntity):
     @property
     def supported_features(self):
         """Flag supported features."""
-        supported_features = SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION | TILT_FEATURES
+        supported_features = (
+            CoverEntityFeature.OPEN
+            | CoverEntityFeature.CLOSE
+            | CoverEntityFeature.STOP
+            | CoverEntityFeature.SET_POSITION
+            | TILT_FEATURES
+        )
         return supported_features
 
     @property
@@ -489,8 +488,8 @@ class UnipiCover(CoverEntity):
             return (self._position, self._tilt_value)
 
         if start_time > stop_time:
-            _LOGGER.error("Posoition/tilt time error %s start: %d, stop: %d",
-                        friendly_property_name,
+            _LOGGER.error("Position/tilt time error for %s start: %d, stop: %d",
+                        self._name,
                         start_time,
                         stop_time,
                     )
@@ -581,8 +580,7 @@ class UnipiCover(CoverEntity):
         else:
             new_oper_state = OPER_STATE_ERROR
             _LOGGER.error(
-                        "Detected signals on both motor drivers for",
-                        friendly_property_name,
+                        "Detected signals on both motor drivers for %s",
                         self._name,
                     )
         _LOGGER.info("Cover oper state %s", self._oper_state)

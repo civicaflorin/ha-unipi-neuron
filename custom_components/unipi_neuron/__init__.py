@@ -4,7 +4,6 @@ import json
 import logging
 
 import voluptuous as vol
-from evok_ws_client import *
 from websockets.exceptions import ConnectionClosedError
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
@@ -14,7 +13,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
-from .const import DOMAIN
+from .const import DOMAIN, CONF_NEURON_TYPES
 
 CONF_RECONNECT = "reconnect_time"
 
@@ -38,6 +37,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass, config):
     """Set up the unipi_neuron component."""
+    from evok_ws_client import UnipiEvokWsClient
     #_LOGGER.info("In async setup!!!!!!!!")
     hass.data[DOMAIN] = {}
 
@@ -58,7 +58,9 @@ async def async_setup(hass, config):
         _LOGGER.info("Setting up Neuron %s on IP:%s", name, ip_addr)
         neuron = UnipiEvokWsClient(ip_addr, neuron_conf[CONF_TYPE], name)
 
-        hass.loop.create_task(evok_connection(hass, neuron, reconnect_seconds))
+        hass.async_create_background_task(
+            evok_connection(hass, neuron, reconnect_seconds), f"unipi_neuron_{name}"
+        )
         hass.data[DOMAIN][name] = neuron
     return True
 
